@@ -26,9 +26,6 @@ func main() {
 	http.HandleFunc("/replace", replaceHandler)
 
 	if http.ListenAndServe(":8088", nil) != nil {
-		println("Unable to serve the address")
-		return
+		println("Error while trying to serve the address")
 	}
-
-	println("Listening for requests")
 }
