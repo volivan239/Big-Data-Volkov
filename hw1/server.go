@@ -1,24 +1,31 @@
 package main
 
 import (
+	"io"
 	"net/http"
 	"os"
 )
 
 const registryFile = "body.txt"
-const MAX_BODY_SIZE = 64 * 1024
 
 func getHandler(writer http.ResponseWriter, _ *http.Request) {
-	contents, _ := os.ReadFile(registryFile)
-	writer.WriteHeader(200)
+	contents, err := os.ReadFile(registryFile)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	writer.WriteHeader(http.StatusOK)
 	writer.Write(contents)
 }
 
 func replaceHandler(writer http.ResponseWriter, request *http.Request) {
-	var buffer [MAX_BODY_SIZE]byte
-	newLen, _ := request.Body.Read(buffer[:])
-	os.WriteFile(registryFile, buffer[:newLen], 0777)
-	writer.WriteHeader(200)
+	buffer, err := io.ReadAll(request.Body)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	os.WriteFile(registryFile, buffer, 0777)
+	writer.WriteHeader(http.StatusOK)
 }
 
 func main() {
