@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -64,7 +62,7 @@ func wsHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	log.Printf("New ws connection with %s", request.RemoteAddr)
-	registerWsConnection(connection)
+	downstreamConnections = append(downstreamConnections, connection)
 }
 
 var Source string
@@ -84,13 +82,7 @@ func main() {
 	go transactionManager()
 
 	for _, peer := range peers {
-		connection, _, err := websocket.Dial(context.Background(), fmt.Sprintf("ws://%s/ws", peer), nil)
-		if err != nil {
-			log.Print(err)
-			continue
-		}
-		log.Printf("Established ws connection with %s", peer)
-		registerWsConnection(connection)
+		go listenUpstreamWsConnection(peer)
 	}
 
 	if http.ListenAndServe(addr, nil) != nil {
