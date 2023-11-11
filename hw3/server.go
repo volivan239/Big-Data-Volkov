@@ -1,16 +1,21 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
+	"os"
+
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
-	"os"
 )
 
 var transactionCounter uint64
+
+//go:embed index.html
+var f embed.FS
 
 func getHandler(writer http.ResponseWriter, _ *http.Request) {
 	writer.WriteHeader(http.StatusOK)
@@ -35,8 +40,10 @@ func replaceHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func testHandler(writer http.ResponseWriter, request *http.Request) {
+	enableCors(&writer)
 	writer.WriteHeader(http.StatusOK)
-	index, _ := os.ReadFile("index.html")
+	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+	index, _ := f.ReadFile("index.html")
 	writer.Write(index)
 }
 
@@ -67,6 +74,10 @@ func wsHandler(writer http.ResponseWriter, request *http.Request) {
 
 var Source string
 var peers []string
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
 
 func main() {
 	addr := os.Args[1]
