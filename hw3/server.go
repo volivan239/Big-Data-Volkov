@@ -1,18 +1,21 @@
 package main
 
 import (
-	"context"
+	"embed"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
+
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
-	"os"
 )
 
 var transactionCounter uint64
+
+//go:embed index.html
+var f embed.FS
 
 func getHandler(writer http.ResponseWriter, _ *http.Request) {
 	writer.WriteHeader(http.StatusOK)
@@ -37,8 +40,10 @@ func replaceHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func testHandler(writer http.ResponseWriter, request *http.Request) {
+	enableCors(&writer)
 	writer.WriteHeader(http.StatusOK)
-	index, _ := os.ReadFile("index.html")
+	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+	index, _ := f.ReadFile("index.html")
 	writer.Write(index)
 }
 
@@ -64,11 +69,15 @@ func wsHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	log.Printf("New ws connection with %s", request.RemoteAddr)
-	registerWsConnection(connection)
+	downstreamConnections = append(downstreamConnections, connection)
 }
 
 var Source string
 var peers []string
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
 
 func main() {
 	addr := os.Args[1]
@@ -84,13 +93,7 @@ func main() {
 	go transactionManager()
 
 	for _, peer := range peers {
-		connection, _, err := websocket.Dial(context.Background(), fmt.Sprintf("ws://%s/ws", peer), nil)
-		if err != nil {
-			log.Print(err)
-			continue
-		}
-		log.Printf("Established ws connection with %s", peer)
-		registerWsConnection(connection)
+		go listenUpstreamWsConnection(peer)
 	}
 
 	if http.ListenAndServe(addr, nil) != nil {

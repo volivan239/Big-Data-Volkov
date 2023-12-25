@@ -2,6 +2,7 @@ package main
 
 import (
 	jsonpatch "github.com/evanphx/json-patch"
+	"log"
 )
 
 var snapshot = "{}"
@@ -24,13 +25,22 @@ func transactionManager() {
 
 		Journal = append(Journal, transaction)
 
-		patch, _ := jsonpatch.DecodePatch([]byte(transaction.Payload))
-		new_state, _ := patch.Apply([]byte(snapshot))
+		patch, err := jsonpatch.DecodePatch([]byte(transaction.Payload))
+		if err != nil {
+			log.Printf("Failed to decode patch: %v", err)
+			continue
+		}
+
+		new_state, err := patch.Apply([]byte(snapshot))
+		if err != nil {
+			log.Printf("Failed to apply patch: %v", err)
+			continue
+		}
 		snapshot = string(new_state)
 
 		vclock[transaction.Source] = transaction.Id
 
-		for _, connection := range wsConnections {
+		for _, connection := range downstreamConnections {
 			go sendByWsConnection(connection, transaction)
 		}
 	}
