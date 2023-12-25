@@ -48,7 +48,7 @@ function PlayerInput() {
     const handleClick = function() {
         fetch("http://127.0.0.1:8080/replace", {
         method: "POST",
-        body:`[{"op":"add", "path": "/${playerName}", "value": {"x":20, "y":20}}]`})
+        body:`[{"op":"add", "path": "/${playerName}", "value": {"x":50, "y":500}}]`})
     }
 
     const updatePlayer = function(player:any) {
@@ -58,25 +58,25 @@ function PlayerInput() {
     }
     const handleUp = function() {
         let player = snap[playerName]
-        player.y--
+        player.y -= 5
         updatePlayer(player)
     }
 
     const handleDown = function() {
         let player = snap[playerName]
-        player.y++
+        player.y += 5
         updatePlayer(player)
     }
 
     const handleLeft = function() {
         let player = snap[playerName]
-        player.x--
+        player.x -= 5
         updatePlayer(player)
     }
 
     const handleRight = function() {
         let player = snap[playerName]
-        player.x++
+        player.x += 5
         updatePlayer(player)
     }
 
@@ -110,11 +110,10 @@ function Players() {
         let player = snap[k]
         let param = 'translate(' + player.x + ' ' + player.y + ')'
         console.log(param)
-        // let y = true
         players.push(
-        <g transform={param}>
-            <Copatych></Copatych>
-        </g>
+            <g transform={param}>
+                <Copatych name={k}></Copatych>
+            </g>
         )
         // players.push(<circle cx={player.x} cy={player.y} r="20" stroke="white" fill="transparent" />)
     }
